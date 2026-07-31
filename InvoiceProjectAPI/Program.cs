@@ -44,6 +44,12 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>(); 
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
+builder.Services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddSingleton<HttpContextAccessor>();
  
 builder.Services.AddSwaggerGen(c =>
