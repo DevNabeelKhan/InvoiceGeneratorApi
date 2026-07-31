@@ -1,0 +1,6 @@
+USPTOBackendAPI_HostAddress = http://localhost:5077
+
+GET {{USPTOBackendAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
