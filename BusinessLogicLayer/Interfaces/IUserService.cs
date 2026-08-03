@@ -17,6 +17,7 @@ namespace BusinessLogicLayer.Interfaces
     public interface IUserService
     { 
         Task<User> Authenticate(string UserId,string UserPassword);
+        Task<User> AuthenticateWithGoogle(string idToken);
         Task<List<User>> GetUserId(int UserId, List<int> BatchIds); 
         Task<dynamic> ChangePassword(ChangePassword changePassword);
         Task<dynamic> InsertUpdateUser(UserDto user);

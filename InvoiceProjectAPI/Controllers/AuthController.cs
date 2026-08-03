@@ -34,6 +34,24 @@ namespace ConvergeAPI.Controllers
         }
 
 
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+        {
+            try
+            {
+                var user = await _userService.AuthenticateWithGoogle(request.IdToken);
+                if (user == null)
+                {
+                    return Ok(ResponseHelper.GetFailureResponse("Google authentication failed. Please try again."));
+                }
+                return Ok(ResponseHelper.GetSuccessResponse(user));
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse("Google authentication failed."));
+            }
+        }
+
         [HttpPost("ChangePassword")]
         public async Task<IActionResult>ChangePassword(ChangePassword changePassword)
         {

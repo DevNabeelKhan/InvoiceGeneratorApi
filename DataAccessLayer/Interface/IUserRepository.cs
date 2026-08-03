@@ -7,6 +7,7 @@ namespace DataAccessLayer.Interface
     public interface IUserRepository
     { 
         Task<User> Authenticate(string userId, string password);
+        Task<User> GetUserByEmail(string email);
         Task<List<User>> GetUserId(int UserId, List<int> BatchIds); 
         Task<dynamic> ChangePassword(ChangePassword change);
  

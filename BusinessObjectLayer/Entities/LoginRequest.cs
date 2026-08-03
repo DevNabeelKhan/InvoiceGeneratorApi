@@ -9,6 +9,13 @@ namespace BusinessObjectsLayer.Entities
         public string UserId { get; set; }
         public string Password { get; set; }
     }
+
+    public class GoogleLoginRequest
+    {
+        [Required(ErrorMessage = "IdToken is required.")]
+        public string IdToken { get; set; }
+    }
+
     public class ChangePassword
     {
         public int? Id { get; set; }

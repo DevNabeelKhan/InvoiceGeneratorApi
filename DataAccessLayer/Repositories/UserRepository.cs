@@ -37,6 +37,22 @@ namespace DataAccessLayer.Repositories
             return null;    
         }
 
+        public async Task<BusinessObjectsLayer.Entities.User> GetUserByEmail(string email)
+        {
+            try
+            {
+                using var connection = _context.CreateConnection();
+                var user = await connection.QueryFirstOrDefaultAsync<User>(
+                    "SELECT u.*, r.Title AS RoleTitle FROM [User] u (NOLOCK) LEFT JOIN [Role] r (NOLOCK) ON r.Id = u.RoleId AND r.IsActive = 1 WHERE LOWER(u.UserName) = LOWER(@Email) AND u.IsActive = 1",
+                    new { Email = email });
+                return user;
+            }
+            catch (Exception ex)
+            {
+            }
+            return null;
+        }
+
         public async Task<dynamic> ChangePassword(ChangePassword changePassword)
         {
             var resp = new Object();

@@ -4,6 +4,7 @@ using BusinessObjectsLayer.Entities;
 using DataAccessLayer.Interface;
 using DataAccessLayer.Repositories;
 using DataAccessLayer.Shared.Helper;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -49,6 +50,48 @@ namespace BusinessLogicLayer.Service
             
             var token = GenerateJwtToken(user);
             return new BusinessObjectsLayer.Entities.User { Token = token, Expiry = DateTime.UtcNow.AddMinutes(_durationInMinutes),FullName=user.FullName, Password = user.Password, UserName = user.UserName,  Id = user.Id,PictureUrl=user.PictureUrl };
+        }
+
+        public async Task<BusinessObjectsLayer.Entities.User> AuthenticateWithGoogle(string idToken)
+        {
+            try
+            {
+                var settings = new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { _configuration["Google:ClientId"] }
+                };
+
+                var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+
+                var user = await _userRepository.GetUserByEmail(payload.Email.ToLower());
+
+                if (user == null)
+                {
+                    user = new BusinessObjectsLayer.Entities.User
+                    {
+                        FullName = payload.Name,
+                        UserName = payload.Email,
+                        Email = payload.Email,
+                        PictureUrl = payload.Picture
+                    };
+                }
+
+                var token = GenerateJwtToken(user);
+                return new BusinessObjectsLayer.Entities.User
+                {
+                    Token = token,
+                    Expiry = DateTime.UtcNow.AddMinutes(_durationInMinutes),
+                    FullName = user.FullName ?? payload.Name,
+                    UserName = user.UserName ?? payload.Email,
+                    Email = payload.Email,
+                    Id = user.Id,
+                    PictureUrl = user.PictureUrl ?? payload.Picture
+                };
+            }
+            catch (InvalidJwtException)
+            {
+                return null;
+            }
         }
 
         public async Task<dynamic> ChangePassword(ChangePassword changePassword)
