@@ -1,3 +1,4 @@
+using BusinessLogicLayer.Helpers;
 using BusinessLogicLayer.Interfaces;
 using BusinessLogicLayer.Service;
 using BusinessObjectsLayer.Entities;
@@ -5,6 +6,7 @@ using ConvergeAPI.Hubs;
 using DataAccess.DbContext;
 using DataAccessLayer.Interface;
 using DataAccessLayer.Repositories;
+using InvoiceProjectAPI.Mapping;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -54,6 +56,12 @@ builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
 builder.Services.AddScoped<IBeneficiaryCustomerMappingService, BeneficiaryCustomerMappingService>();
 builder.Services.AddScoped<IBeneficiaryCustomerMappingRepository, BeneficiaryCustomerMappingRepository>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
+builder.Services.AddScoped<IPdfService, PdfService>();
+builder.Services.AddScoped<IXmlService, XmlService>();
+builder.Services.AddAutoMapper(typeof(InvoiceProfile));
 builder.Services.AddSingleton<HttpContextAccessor>();
  
 builder.Services.AddSwaggerGen(c =>

@@ -21,6 +21,10 @@ CREATE OR ALTER PROCEDURE [dbo].[InsertUpdateCustomer]
     @SellingRevenueAccountId INT = NULL,
     @SellingRevenueCostCenterId INT = NULL,
     @SellingRevenueTaxRateId INT = NULL,
+    @ArabicName NVARCHAR(255) = NULL,
+    @ArabicAddress NVARCHAR(MAX) = NULL,
+    @Email NVARCHAR(255) = NULL,
+    @Phone NVARCHAR(50) = NULL,
     @IsActive BIT = 1,
     @UserId INT = NULL
 AS
@@ -34,12 +38,14 @@ BEGIN
          District, AddressAdditionalNumber, PostalCode, InvoicingCode, InvoicingEmail, InvoicingPhone,
          InvoicingRelationShipId, PaymentTermId, ContactTypeID, ContactTypeNumber,
          SellingRevenueAccountId, SellingRevenueCostCenterId, SellingRevenueTaxRateId,
+         ArabicName, ArabicAddress, Email, Phone,
          IsActive, CreatedDate, CreatedBy, UserId)
         VALUES
         (@CustomerName, @CountryId, @TaxRegistrationNumber, @City, @StreetAddress, @BuildingNumber,
          @District, @AddressAdditionalNumber, @PostalCode, @InvoicingCode, @InvoicingEmail, @InvoicingPhone,
          @InvoicingRelationShipId, @PaymentTermId, @ContactTypeID, @ContactTypeNumber,
          @SellingRevenueAccountId, @SellingRevenueCostCenterId, @SellingRevenueTaxRateId,
+         @ArabicName, @ArabicAddress, @Email, @Phone,
          ISNULL(@IsActive, 1), GETDATE(), @UserId, @UserId);
 
         SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id;
@@ -66,6 +72,10 @@ BEGIN
             SellingRevenueAccountId = @SellingRevenueAccountId,
             SellingRevenueCostCenterId = @SellingRevenueCostCenterId,
             SellingRevenueTaxRateId = @SellingRevenueTaxRateId,
+            ArabicName = @ArabicName,
+            ArabicAddress = @ArabicAddress,
+            Email = @Email,
+            Phone = @Phone,
             IsActive = ISNULL(@IsActive, IsActive),
             UpdatedDate = GETDATE(),
             UpdatedBy = @UserId

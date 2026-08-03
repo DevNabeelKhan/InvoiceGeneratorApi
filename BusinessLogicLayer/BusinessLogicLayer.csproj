@@ -10,6 +10,8 @@
     <PackageReference Include="Amazon.S3" Version="0.34.0" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.411.7" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.3.0" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="PuppeteerSharp" Version="20.0.5" />
   </ItemGroup>
 
   <ItemGroup>

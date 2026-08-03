@@ -69,6 +69,10 @@ namespace DataAccessLayer.Repositories
                     SellingRevenueAccountId = model.SellingRevenueAccountId,
                     SellingRevenueCostCenterId = model.SellingRevenueCostCenterId,
                     SellingRevenueTaxRateId = model.SellingRevenueTaxRateId,
+                    ArabicName = model.ArabicName,
+                    ArabicAddress = model.ArabicAddress,
+                    Email = model.Email,
+                    Phone = model.Phone,
                     IsActive = model.IsActive,
                     UserId = Helper.UserId(_httpContextAccessor)
                 };

@@ -19,7 +19,7 @@ BEGIN
             BuildingNumber, District, AddressAdditionalNumber, PostalCode, InvoicingCode,
             InvoicingEmail, InvoicingPhone, InvoicingRelationShipId, PaymentTermId,
             ContactTypeID, ContactTypeNumber, SellingRevenueAccountId, SellingRevenueCostCenterId,
-            SellingRevenueTaxRateId, IsActive,
+            SellingRevenueTaxRateId, ArabicName, ArabicAddress, Email, Phone, IsActive,
             CreatedDate AS CreatedOn, CreatedBy, UpdatedDate AS UpdatedOn, UpdatedBy, UserId,
             CAST(1 AS INT) AS TotalRecords
         FROM [Customer]
@@ -32,7 +32,7 @@ BEGIN
         BuildingNumber, District, AddressAdditionalNumber, PostalCode, InvoicingCode,
         InvoicingEmail, InvoicingPhone, InvoicingRelationShipId, PaymentTermId,
         ContactTypeID, ContactTypeNumber, SellingRevenueAccountId, SellingRevenueCostCenterId,
-        SellingRevenueTaxRateId, IsActive,
+        SellingRevenueTaxRateId, ArabicName, ArabicAddress, Email, Phone, IsActive,
         CreatedDate AS CreatedOn, CreatedBy, UpdatedDate AS UpdatedOn, UpdatedBy, UserId,
         COUNT(*) OVER() AS TotalRecords
     FROM [Customer]

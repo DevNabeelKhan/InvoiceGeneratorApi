@@ -10,6 +10,7 @@ namespace BusinessObjectsLayer.Entities
         public decimal? SellingPrice { get; set; }
         public int? RevenueAccountID { get; set; }
         public int? RevenueTaxRateId { get; set; }
+        public decimal? RevenueTaxRatePercentage { get; set; }
         public decimal? PurchaseCost { get; set; }
         public int? ExpenseAccountId { get; set; }
         public int? PurchaseTaxRateId { get; set; }

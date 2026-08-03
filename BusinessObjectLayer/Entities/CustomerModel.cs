@@ -23,6 +23,10 @@ namespace BusinessObjectsLayer.Entities
         public int? SellingRevenueAccountId { get; set; }
         public int? SellingRevenueCostCenterId { get; set; }
         public int? SellingRevenueTaxRateId { get; set; }
+        public string? ArabicName { get; set; }
+        public string? ArabicAddress { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
         public int? UserId { get; set; }
 
         public string? SearchText { get; set; }
