@@ -35,7 +35,7 @@ namespace BusinessLogicLayer.Helpers
                 new XElement(cac + "AccountingSupplierParty",
                     new XElement(cac + "Party",
                         new XElement(cac + "PartyLegalEntity",
-                            new XElement(cbc + "RegistrationName", invoice.CompanyName ?? company?.Name)
+                            new XElement(cbc + "RegistrationName", invoice.CompanyName ?? company?.Title)
                         ),
                         new XElement(cac + "PartyTaxScheme",
                             new XElement(cbc + "CompanyID", invoice.CompanyVATNumber ?? company?.VATNumber),

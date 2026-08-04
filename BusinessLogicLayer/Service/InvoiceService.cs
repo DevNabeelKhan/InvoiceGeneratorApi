@@ -74,6 +74,36 @@ namespace BusinessLogicLayer.Service
             return await _invoiceRepository.InsertUpdateCurrency(model);
         }
 
+        public async Task<dynamic> GetProject(int? Id, string? SearchText, bool? IsActive, int? PageNumber, int? PageSize)
+        {
+            return await _invoiceRepository.GetProject(Id, SearchText, IsActive, PageNumber, PageSize);
+        }
+
+        public async Task<dynamic> SaveProject(ProjectModel model)
+        {
+            return await _invoiceRepository.InsertUpdateProject(model);
+        }
+
+        public async Task<dynamic> DeleteProject(int? Id, int? UserId)
+        {
+            return await _invoiceRepository.DeleteProject(Id, UserId);
+        }
+
+        public async Task<dynamic> GetProjectDocument(int? Id, int? ProjectId)
+        {
+            return await _invoiceRepository.GetProjectDocument(Id, ProjectId);
+        }
+
+        public async Task<dynamic> SaveProjectDocument(ProjectDocumentModel model)
+        {
+            return await _invoiceRepository.InsertProjectDocument(model);
+        }
+
+        public async Task<dynamic> DeleteProjectDocument(int? Id, int? UserId)
+        {
+            return await _invoiceRepository.DeleteProjectDocument(Id, UserId);
+        }
+
         private InvoiceModel MapToInvoiceModel(InvoiceDto dto)
         {
             return new InvoiceModel
@@ -86,7 +116,8 @@ namespace BusinessLogicLayer.Service
                 DueDate = dto.DueDate,
                 Reference = dto.Reference,
                 PurchaseOrderNumber = dto.PurchaseOrderNumber,
-                ProjectName = dto.ProjectName,
+                ProjectId = dto.ProjectId,
+                PricesIncludeTax = dto.PricesIncludeTax,
                 Notes = dto.Notes,
                 ExchangeRate = dto.ExchangeRate,
                 DiscountPercentage = dto.DiscountPercentage,
@@ -110,6 +141,8 @@ namespace BusinessLogicLayer.Service
                     VATAmount = p.VATAmount,
                     LineTotal = p.LineTotal,
                     AccountId = p.AccountId,
+                    CostCenterId = p.CostCenterId,
+                    RevenueRecognitionId = p.RevenueRecognitionId,
                     SortOrder = p.SortOrder
                 }).ToList() ?? new List<InvoiceProductModel>()
             };
@@ -119,6 +152,7 @@ namespace BusinessLogicLayer.Service
         {
             decimal subtotal = 0;
             decimal totalVat = 0;
+            var pricesIncludeTax = invoice.PricesIncludeTax ?? false;
 
             foreach (var line in invoice.Products)
             {
@@ -132,11 +166,25 @@ namespace BusinessLogicLayer.Service
                 if (discountPct > 0 && discountAmt == 0)
                     discountAmt = Math.Round(lineAmount * discountPct / 100, 2);
 
-                var taxable = lineAmount - discountAmt;
-                if (taxable < 0) taxable = 0;
+                var amountAfterDiscount = lineAmount - discountAmt;
+                if (amountAfterDiscount < 0) amountAfterDiscount = 0;
 
-                var vat = Math.Round(taxable * (line.TaxRate ?? 0) / 100, 2);
-                var lineTotal = taxable + vat;
+                var rate = line.TaxRate ?? 0;
+                decimal taxable, vat, lineTotal;
+
+                if (pricesIncludeTax)
+                {
+                    // amountAfterDiscount is tax-inclusive (gross)
+                    taxable = rate > 0 ? Math.Round(amountAfterDiscount / (1 + rate / 100), 2) : amountAfterDiscount;
+                    vat = Math.Round(amountAfterDiscount - taxable, 2);
+                    lineTotal = amountAfterDiscount;
+                }
+                else
+                {
+                    taxable = amountAfterDiscount;
+                    vat = Math.Round(taxable * rate / 100, 2);
+                    lineTotal = taxable + vat;
+                }
 
                 line.TaxableAmount = taxable;
                 line.VATAmount = vat;

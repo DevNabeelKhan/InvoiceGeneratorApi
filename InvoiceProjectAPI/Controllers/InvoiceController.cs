@@ -110,10 +110,29 @@ namespace ConvergeAPI.Controllers
         }
 
         [HttpPost("InsertUpdateCompany")]
-        public async Task<IActionResult> InsertUpdateCompany(CompanyModel model)
+        public async Task<IActionResult> InsertUpdateCompany([FromForm] CompanyModel model, IFormFile? attachLogo)
         {
             try
             {
+                if (attachLogo != null && attachLogo.Length > 0)
+                {
+                    var allowedExtensions = new[] { ".png", ".jpg", ".jpeg", ".webp", ".svg" };
+                    var extension = Path.GetExtension(attachLogo.FileName)?.ToLowerInvariant();
+
+                    if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+                        return Ok(ResponseHelper.GetFailureResponse("Only PNG, JPG, JPEG, WEBP or SVG images are allowed."));
+
+                    if (attachLogo.Length > 5 * 1024 * 1024)
+                        return Ok(ResponseHelper.GetFailureResponse("Logo must be 5 MB or smaller."));
+
+                    var (_, fileUrl) = await Helper.AttachFileToS3Async(attachLogo, _configuration);
+
+                    if (string.IsNullOrEmpty(fileUrl))
+                        return Ok(ResponseHelper.GetFailureResponse("Logo upload failed."));
+
+                    model.LogoUrl = fileUrl;
+                }
+
                 var result = await _invoiceService.SaveCompany(model);
                 return Ok(ResponseHelper.GetSuccessResponse(result));
             }
@@ -229,7 +248,7 @@ namespace ConvergeAPI.Controllers
                 object? firstCompany = companyList != null && ((IEnumerable<object>)companyList).Any() ? ((IEnumerable<object>)companyList).First() : null;
                 var company = firstCompany != null ? _mapper.Map<CompanyModel>(firstCompany) : null;
 
-                var sellerName = invoice.CompanyName ?? company?.Name ?? string.Empty;
+                var sellerName = invoice.CompanyName ?? company?.Title ?? string.Empty;
                 var vatNumber = invoice.CompanyVATNumber ?? company?.VATNumber ?? string.Empty;
                 var invoiceTotal = invoice.GrandTotal ?? 0;
                 var vatTotal = invoice.TaxAmount ?? 0;
@@ -268,6 +287,115 @@ namespace ConvergeAPI.Controllers
 
                 var xmlBytes = await System.IO.File.ReadAllBytesAsync(path);
                 return File(xmlBytes, "application/xml", $"Invoice-{invoice.InvoiceNumber}.xml");
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse(ex.Message));
+            }
+        }
+
+        [HttpGet("GetProject")]
+        public async Task<IActionResult> GetProject(int? Id, string? SearchText, bool? IsActive, int? PageNumber = 1, int? PageSize = 20)
+        {
+            try
+            {
+                var result = await _invoiceService.GetProject(Id, SearchText, IsActive, PageNumber, PageSize);
+                return Ok(ResponseHelper.GetSuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse(ex.Message));
+            }
+        }
+
+        [HttpPost("InsertUpdateProject")]
+        public async Task<IActionResult> InsertUpdateProject(ProjectModel model)
+        {
+            try
+            {
+                var result = await _invoiceService.SaveProject(model);
+                return Ok(ResponseHelper.GetSuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse(ex.Message));
+            }
+        }
+
+        [HttpGet("DeleteProject")]
+        public async Task<IActionResult> DeleteProject(int? Id)
+        {
+            try
+            {
+                int? userId = null;
+                var userIdClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var parsedUserId))
+                    userId = parsedUserId;
+
+                var result = await _invoiceService.DeleteProject(Id, userId);
+                return Ok(ResponseHelper.GetSuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse(ex.Message));
+            }
+        }
+
+        [HttpGet("GetProjectDocument")]
+        public async Task<IActionResult> GetProjectDocument(int? Id, int? ProjectId)
+        {
+            try
+            {
+                var result = await _invoiceService.GetProjectDocument(Id, ProjectId);
+                return Ok(ResponseHelper.GetSuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse(ex.Message));
+            }
+        }
+
+        [HttpPost("UploadProjectDocument")]
+        public async Task<IActionResult> UploadProjectDocument(int ProjectId, string? DocumentTitle, IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return Ok(ResponseHelper.GetFailureResponse("No file received."));
+
+                var (fileName, fileUrl) = await Helper.AttachFileToS3Async(file, _configuration);
+
+                if (string.IsNullOrEmpty(fileUrl))
+                    return Ok(ResponseHelper.GetFailureResponse("Upload failed."));
+
+                var model = new ProjectDocumentModel
+                {
+                    ProjectId = ProjectId,
+                    DocumentTitle = string.IsNullOrWhiteSpace(DocumentTitle) ? fileName : DocumentTitle,
+                    Url = fileUrl
+                };
+
+                var result = await _invoiceService.SaveProjectDocument(model);
+                return Ok(ResponseHelper.GetSuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse(ex.Message));
+            }
+        }
+
+        [HttpGet("DeleteProjectDocument")]
+        public async Task<IActionResult> DeleteProjectDocument(int? Id)
+        {
+            try
+            {
+                int? userId = null;
+                var userIdClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var parsedUserId))
+                    userId = parsedUserId;
+
+                var result = await _invoiceService.DeleteProjectDocument(Id, userId);
+                return Ok(ResponseHelper.GetSuccessResponse(result));
             }
             catch (Exception ex)
             {

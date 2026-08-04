@@ -20,8 +20,8 @@ BEGIN
 END
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Company') AND name = 'Name')
-    ALTER TABLE Company ADD Name NVARCHAR(255) NOT NULL DEFAULT '';
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Company') AND name = 'Title')
+    ALTER TABLE Company ADD Title NVARCHAR(255) NOT NULL DEFAULT '';
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Company') AND name = 'ArabicName')
     ALTER TABLE Company ADD ArabicName NVARCHAR(255) NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Company') AND name = 'Address')
@@ -36,6 +36,8 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Company') 
     ALTER TABLE Company ADD Website NVARCHAR(255) NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Company') AND name = 'VATNumber')
     ALTER TABLE Company ADD VATNumber NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Company') AND name = 'LogoUrl')
+    ALTER TABLE Company ADD LogoUrl NVARCHAR(500) NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Company') AND name = 'LogoPath')
     ALTER TABLE Company ADD LogoPath NVARCHAR(500) NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Company') AND name = 'StampPath')
@@ -81,8 +83,8 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Currency') AND name = 'Code')
     ALTER TABLE Currency ADD Code NVARCHAR(10) NOT NULL DEFAULT '';
-IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Currency') AND name = 'Name')
-    ALTER TABLE Currency ADD Name NVARCHAR(100) NOT NULL DEFAULT '';
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Currency') AND name = 'Title')
+    ALTER TABLE Currency ADD Title NVARCHAR(100) NOT NULL DEFAULT '';
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Currency') AND name = 'Symbol')
     ALTER TABLE Currency ADD Symbol NVARCHAR(10) NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Currency') AND name = 'ExchangeRate')
@@ -97,6 +99,68 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Currency')
     ALTER TABLE Currency ADD UpdatedDate DATETIME NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Currency') AND name = 'UpdatedBy')
     ALTER TABLE Currency ADD UpdatedBy INT NULL;
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Project
+-- ----------------------------------------------------------------------------------------------------
+IF OBJECT_ID('Project') IS NULL
+BEGIN
+    CREATE TABLE Project (
+        Id INT IDENTITY(1,1) PRIMARY KEY
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Project') AND name = 'Title')
+    ALTER TABLE Project ADD Title NVARCHAR(500) NOT NULL DEFAULT '';
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Project') AND name = 'IsActive')
+    ALTER TABLE Project ADD IsActive BIT NOT NULL DEFAULT 1;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Project') AND name = 'UserId')
+    ALTER TABLE Project ADD UserId INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Project') AND name = 'CreatedDate')
+    ALTER TABLE Project ADD CreatedDate DATETIME NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Project') AND name = 'CreatedBy')
+    ALTER TABLE Project ADD CreatedBy INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Project') AND name = 'UpdatedDate')
+    ALTER TABLE Project ADD UpdatedDate DATETIME NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Project') AND name = 'UpdatedBy')
+    ALTER TABLE Project ADD UpdatedBy INT NULL;
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- ProjectDocument (documents attached to a project, uploaded to S3)
+-- ----------------------------------------------------------------------------------------------------
+IF OBJECT_ID('ProjectDocument') IS NULL
+BEGIN
+    CREATE TABLE ProjectDocument (
+        Id INT IDENTITY(1,1) PRIMARY KEY
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ProjectDocument') AND name = 'ProjectId')
+    ALTER TABLE ProjectDocument ADD ProjectId INT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ProjectDocument') AND name = 'DocumentTitle')
+    ALTER TABLE ProjectDocument ADD DocumentTitle NVARCHAR(255) NOT NULL DEFAULT '';
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ProjectDocument') AND name = 'Url')
+    ALTER TABLE ProjectDocument ADD Url NVARCHAR(500) NOT NULL DEFAULT '';
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ProjectDocument') AND name = 'IsActive')
+    ALTER TABLE ProjectDocument ADD IsActive BIT NOT NULL DEFAULT 1;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ProjectDocument') AND name = 'UserId')
+    ALTER TABLE ProjectDocument ADD UserId INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ProjectDocument') AND name = 'CreatedDate')
+    ALTER TABLE ProjectDocument ADD CreatedDate DATETIME NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ProjectDocument') AND name = 'CreatedBy')
+    ALTER TABLE ProjectDocument ADD CreatedBy INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ProjectDocument') AND name = 'UpdatedDate')
+    ALTER TABLE ProjectDocument ADD UpdatedDate DATETIME NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('ProjectDocument') AND name = 'UpdatedBy')
+    ALTER TABLE ProjectDocument ADD UpdatedBy INT NULL;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_ProjectDocument_Project')
+    ALTER TABLE ProjectDocument ADD CONSTRAINT FK_ProjectDocument_Project FOREIGN KEY (ProjectId) REFERENCES Project(Id) ON DELETE CASCADE;
 GO
 
 -- ----------------------------------------------------------------------------------------------------
@@ -132,8 +196,12 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') 
     ALTER TABLE Invoice ADD Reference NVARCHAR(255) NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'PurchaseOrderNumber')
     ALTER TABLE Invoice ADD PurchaseOrderNumber NVARCHAR(255) NULL;
-IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'ProjectName')
-    ALTER TABLE Invoice ADD ProjectName NVARCHAR(500) NULL;
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'ProjectName')
+    ALTER TABLE Invoice DROP COLUMN ProjectName;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'ProjectId')
+    ALTER TABLE Invoice ADD ProjectId INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'PricesIncludeTax')
+    ALTER TABLE Invoice ADD PricesIncludeTax BIT NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'CompanyId')
     ALTER TABLE Invoice ADD CompanyId INT NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'CustomerId')
@@ -212,6 +280,8 @@ IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Invoice_Currency'
     ALTER TABLE Invoice ADD CONSTRAINT FK_Invoice_Currency FOREIGN KEY (CurrencyId) REFERENCES Currency(Id);
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Invoice_Company')
     ALTER TABLE Invoice ADD CONSTRAINT FK_Invoice_Company FOREIGN KEY (CompanyId) REFERENCES Company(Id);
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Invoice_Project')
+    ALTER TABLE Invoice ADD CONSTRAINT FK_Invoice_Project FOREIGN KEY (ProjectId) REFERENCES Project(Id);
 GO
 
 -- ----------------------------------------------------------------------------------------------------
@@ -251,6 +321,10 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoicePro
     ALTER TABLE InvoiceProduct ADD LineTotal DECIMAL(18,2) NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoiceProduct') AND name = 'AccountId')
     ALTER TABLE InvoiceProduct ADD AccountId INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoiceProduct') AND name = 'CostCenterId')
+    ALTER TABLE InvoiceProduct ADD CostCenterId INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoiceProduct') AND name = 'RevenueRecognitionId')
+    ALTER TABLE InvoiceProduct ADD RevenueRecognitionId INT NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoiceProduct') AND name = 'SortOrder')
     ALTER TABLE InvoiceProduct ADD SortOrder INT NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoiceProduct') AND name = 'IsActive')
@@ -271,6 +345,10 @@ IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_InvoiceProduct_Pr
     ALTER TABLE InvoiceProduct ADD CONSTRAINT FK_InvoiceProduct_Product FOREIGN KEY (ProductId) REFERENCES Product(Id);
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_InvoiceProduct_Account')
     ALTER TABLE InvoiceProduct ADD CONSTRAINT FK_InvoiceProduct_Account FOREIGN KEY (AccountId) REFERENCES AccountType(Id);
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_InvoiceProduct_CostCenter')
+    ALTER TABLE InvoiceProduct ADD CONSTRAINT FK_InvoiceProduct_CostCenter FOREIGN KEY (CostCenterId) REFERENCES CostCenter(Id);
+IF OBJECT_ID('RevenueRecognitionType') IS NOT NULL AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_InvoiceProduct_RevenueRecognition')
+    ALTER TABLE InvoiceProduct ADD CONSTRAINT FK_InvoiceProduct_RevenueRecognition FOREIGN KEY (RevenueRecognitionId) REFERENCES RevenueRecognitionType(Id);
 GO
 
 -- ----------------------------------------------------------------------------------------------------

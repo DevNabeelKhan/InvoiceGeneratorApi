@@ -44,7 +44,7 @@ BEGIN
     CREATE TABLE Currency (
         Id              INT IDENTITY(1,1) PRIMARY KEY,
         Code            NVARCHAR(10)    NOT NULL,
-        Name            NVARCHAR(100)   NOT NULL,
+        Title           NVARCHAR(100)   NOT NULL,
         Symbol          NVARCHAR(10)    NULL,
         ExchangeRate    DECIMAL(18,6)   NOT NULL DEFAULT 1,
         IsActive        BIT             NOT NULL DEFAULT 1,
@@ -67,7 +67,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Company')
 BEGIN
     CREATE TABLE Company (
         Id                  INT IDENTITY(1,1) PRIMARY KEY,
-        Name                NVARCHAR(255)   NOT NULL,
+        Title               NVARCHAR(255)   NOT NULL,
         ArabicName          NVARCHAR(255)   NULL,
         Address             NVARCHAR(MAX)   NULL,
         ArabicAddress       NVARCHAR(MAX)   NULL,
@@ -75,6 +75,7 @@ BEGIN
         Phone               NVARCHAR(50)    NULL,
         Website             NVARCHAR(255)   NULL,
         VATNumber           NVARCHAR(100)   NULL,
+        LogoUrl             NVARCHAR(500)   NULL,
         LogoPath            NVARCHAR(500)   NULL,
         StampPath           NVARCHAR(500)   NULL,
         BankName            NVARCHAR(255)   NULL,

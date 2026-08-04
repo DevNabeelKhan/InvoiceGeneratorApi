@@ -11,7 +11,7 @@ GO
 -- ----------------------------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[InsertUpdateCompany]
     @Id                  INT = NULL,
-    @Name                NVARCHAR(255) = NULL,
+    @Title               NVARCHAR(255) = NULL,
     @ArabicName          NVARCHAR(255) = NULL,
     @Address             NVARCHAR(MAX) = NULL,
     @ArabicAddress       NVARCHAR(MAX) = NULL,
@@ -19,6 +19,7 @@ CREATE OR ALTER PROCEDURE [dbo].[InsertUpdateCompany]
     @Phone               NVARCHAR(50)  = NULL,
     @Website             NVARCHAR(255) = NULL,
     @VATNumber           NVARCHAR(100) = NULL,
+    @LogoUrl             NVARCHAR(500) = NULL,
     @LogoPath            NVARCHAR(500) = NULL,
     @StampPath           NVARCHAR(500) = NULL,
     @BankName            NVARCHAR(255) = NULL,
@@ -38,12 +39,12 @@ BEGIN
     IF @Id IS NULL OR @Id = 0
     BEGIN
         INSERT INTO Company
-        (Name, ArabicName, [Address], ArabicAddress, Email, Phone, Website, VATNumber,
-         LogoPath, StampPath, BankName, BankAccountNumber, IBAN, SwiftCode, AccountCurrency,
+        (Title, ArabicName, [Address], ArabicAddress, Email, Phone, Website, VATNumber,
+         LogoUrl, LogoPath, StampPath, BankName, BankAccountNumber, IBAN, SwiftCode, AccountCurrency,
          BeneficiaryName, Country, City, IsActive, CreatedDate, CreatedBy, UpdatedDate, UpdatedBy)
         VALUES
-        (@Name, @ArabicName, @Address, @ArabicAddress, @Email, @Phone, @Website, @VATNumber,
-         @LogoPath, @StampPath, @BankName, @BankAccountNumber, @IBAN, @SwiftCode, @AccountCurrency,
+        (@Title, @ArabicName, @Address, @ArabicAddress, @Email, @Phone, @Website, @VATNumber,
+         @LogoUrl, @LogoPath, @StampPath, @BankName, @BankAccountNumber, @IBAN, @SwiftCode, @AccountCurrency,
          @BeneficiaryName, @Country, @City, ISNULL(@IsActive, 1), GETDATE(), @UserId, GETDATE(), @UserId);
 
         SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id;
@@ -51,7 +52,7 @@ BEGIN
     ELSE
     BEGIN
         UPDATE Company SET
-            Name                = @Name,
+            Title               = @Title,
             ArabicName          = @ArabicName,
             [Address]           = @Address,
             ArabicAddress       = @ArabicAddress,
@@ -59,6 +60,7 @@ BEGIN
             Phone               = @Phone,
             Website             = @Website,
             VATNumber           = @VATNumber,
+            LogoUrl             = @LogoUrl,
             LogoPath            = @LogoPath,
             StampPath           = @StampPath,
             BankName            = @BankName,
@@ -104,7 +106,7 @@ GO
 CREATE OR ALTER PROCEDURE [dbo].[InsertUpdateCurrency]
     @Id             INT = NULL,
     @Code           NVARCHAR(10) = NULL,
-    @Name           NVARCHAR(100) = NULL,
+    @Title          NVARCHAR(100) = NULL,
     @Symbol         NVARCHAR(10) = NULL,
     @ExchangeRate   DECIMAL(18,6) = 1,
     @IsActive       BIT = 1,
@@ -115,8 +117,8 @@ BEGIN
 
     IF @Id IS NULL OR @Id = 0
     BEGIN
-        INSERT INTO Currency (Code, Name, Symbol, ExchangeRate, IsActive, CreatedDate, CreatedBy, UpdatedDate, UpdatedBy)
-        VALUES (@Code, @Name, @Symbol, @ExchangeRate, ISNULL(@IsActive,1), GETDATE(), @UserId, GETDATE(), @UserId);
+        INSERT INTO Currency (Code, Title, Symbol, ExchangeRate, IsActive, CreatedDate, CreatedBy, UpdatedDate, UpdatedBy)
+        VALUES (@Code, @Title, @Symbol, @ExchangeRate, ISNULL(@IsActive,1), GETDATE(), @UserId, GETDATE(), @UserId);
 
         SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id;
     END
@@ -124,7 +126,7 @@ BEGIN
     BEGIN
         UPDATE Currency SET
             Code         = @Code,
-            Name         = @Name,
+            Title        = @Title,
             Symbol       = @Symbol,
             ExchangeRate = @ExchangeRate,
             IsActive     = ISNULL(@IsActive, IsActive),
@@ -193,7 +195,8 @@ CREATE OR ALTER PROCEDURE [dbo].[InsertUpdateInvoice]
     @UUID                    NVARCHAR(100) = NULL,
     @Reference               NVARCHAR(255) = NULL,
     @PurchaseOrderNumber     NVARCHAR(255) = NULL,
-    @ProjectName             NVARCHAR(500) = NULL,
+    @ProjectId               INT = NULL,
+    @PricesIncludeTax        BIT = 0,
     @CompanyId               INT = NULL,
     @CustomerId              INT = NULL,
     @CurrencyId              INT = NULL,
@@ -241,14 +244,14 @@ BEGIN
         IF @UUID IS NULL SET @UUID = CONVERT(NVARCHAR(100), NEWID());
 
         INSERT INTO Invoice
-        (InvoiceNumber, [UUID], Reference, PurchaseOrderNumber, ProjectName, CompanyId, CustomerId,
+        (InvoiceNumber, [UUID], Reference, PurchaseOrderNumber, ProjectId, PricesIncludeTax, CompanyId, CustomerId,
          CurrencyId, ExchangeRate, InvoiceDate, DueDate, Notes, [Status], PaymentStatus,
          Draft, Approved, Cancelled, Sent, Subtotal, DiscountPercentage, DiscountAmount,
          TaxAmount, GrandTotal, RetentionPercentage, RetentionAmount, RoundOffAmount,
          GeneratedQRCode, QRCodeImagePath, PreviousInvoiceHash, XMLPath, PDFPath, CreatedIP,
          IsActive, CreatedDate, CreatedBy, UpdatedDate, UpdatedBy, UserId)
         VALUES
-        (@InvoiceNumber, @UUID, @Reference, @PurchaseOrderNumber, @ProjectName, @CompanyId, @CustomerId,
+        (@InvoiceNumber, @UUID, @Reference, @PurchaseOrderNumber, @ProjectId, ISNULL(@PricesIncludeTax,0), @CompanyId, @CustomerId,
          @CurrencyId, @ExchangeRate, @InvoiceDate, @DueDate, @Notes, @Status, @PaymentStatus,
          ISNULL(@Draft, 1), ISNULL(@Approved, 0), ISNULL(@Cancelled, 0), ISNULL(@Sent, 0),
          @Subtotal, @DiscountPercentage, @DiscountAmount, @TaxAmount, @GrandTotal,
@@ -264,7 +267,8 @@ BEGIN
             InvoiceNumber         = @InvoiceNumber,
             Reference             = @Reference,
             PurchaseOrderNumber   = @PurchaseOrderNumber,
-            ProjectName           = @ProjectName,
+            ProjectId             = @ProjectId,
+            PricesIncludeTax      = ISNULL(@PricesIncludeTax, PricesIncludeTax),
             CompanyId             = @CompanyId,
             CustomerId            = @CustomerId,
             CurrencyId            = @CurrencyId,
@@ -329,7 +333,7 @@ BEGIN
             c.Email AS CustomerEmail,
             c.Phone AS CustomerPhone,
             c.City AS CustomerCity,
-            cmp.Name AS CompanyName,
+            cmp.Title AS CompanyName,
             cmp.ArabicName AS CompanyArabicName,
             cmp.VATNumber AS CompanyVATNumber,
             cmp.[Address] AS CompanyAddress,
@@ -339,15 +343,18 @@ BEGIN
             cmp.IBAN,
             cmp.SwiftCode,
             cmp.AccountCurrency,
-            cmp.LogoPath,
+            cmp.BeneficiaryName,
+            ISNULL(NULLIF(cmp.LogoPath, ''), cmp.LogoUrl) AS LogoPath,
             cmp.StampPath,
             cur.Code AS CurrencyCode,
             cur.Symbol AS CurrencySymbol,
+            pj.Title AS ProjectName,
             CAST(1 AS INT) AS TotalRecords
         FROM Invoice i
         LEFT JOIN Customer c  ON c.Id  = i.CustomerId
         LEFT JOIN Company cmp ON cmp.Id = i.CompanyId
         LEFT JOIN Currency cur ON cur.Id = i.CurrencyId
+        LEFT JOIN Project pj ON pj.Id = i.ProjectId
         WHERE i.Id = @Id AND i.IsActive = ISNULL(@IsActive, i.IsActive);
 
         RETURN;
@@ -356,20 +363,22 @@ BEGIN
     SELECT
         i.*,
         c.CustomerName,
-        cmp.Name AS CompanyName,
+        cmp.Title AS CompanyName,
         cur.Code AS CurrencyCode,
+        pj.Title AS ProjectName,
         COUNT(*) OVER() AS TotalRecords
     FROM Invoice i
     LEFT JOIN Customer c  ON c.Id = i.CustomerId
     LEFT JOIN Company cmp ON cmp.Id = i.CompanyId
     LEFT JOIN Currency cur ON cur.Id = i.CurrencyId
+    LEFT JOIN Project pj ON pj.Id = i.ProjectId
     WHERE i.IsActive = ISNULL(@IsActive, i.IsActive)
       AND (@CustomerId IS NULL OR i.CustomerId = @CustomerId)
       AND (@Status IS NULL OR i.[Status] = @Status)
       AND (@SearchText IS NULL
            OR i.InvoiceNumber LIKE '%' + @SearchText + '%'
            OR i.Reference LIKE '%' + @SearchText + '%'
-           OR i.ProjectName LIKE '%' + @SearchText + '%'
+           OR pj.Title LIKE '%' + @SearchText + '%'
            OR c.CustomerName LIKE '%' + @SearchText + '%')
     ORDER BY i.Id DESC
     OFFSET (ISNULL(@PageNumber, 1) - 1) * ISNULL(@PageSize, 20) ROWS
@@ -413,6 +422,8 @@ CREATE OR ALTER PROCEDURE [dbo].[InsertUpdateInvoiceProduct]
     @VATAmount           DECIMAL(18,2) = 0,
     @LineTotal           DECIMAL(18,2) = 0,
     @AccountId           INT = NULL,
+    @CostCenterId        INT = NULL,
+    @RevenueRecognitionId INT = NULL,
     @SortOrder           INT = 0,
     @IsActive            BIT = 1,
     @UserId              INT = NULL
@@ -424,11 +435,11 @@ BEGIN
     BEGIN
         INSERT INTO InvoiceProduct
         (InvoiceId, ProductId, [Description], Unit, Quantity, Price, DiscountPercentage, DiscountAmount,
-         TaxRate, TaxableAmount, VATAmount, LineTotal, AccountId, SortOrder, IsActive,
+         TaxRate, TaxableAmount, VATAmount, LineTotal, AccountId, CostCenterId, RevenueRecognitionId, SortOrder, IsActive,
          CreatedDate, CreatedBy, UpdatedDate, UpdatedBy)
         VALUES
         (@InvoiceId, @ProductId, @Description, @Unit, @Quantity, @Price, @DiscountPercentage, @DiscountAmount,
-         @TaxRate, @TaxableAmount, @VATAmount, @LineTotal, @AccountId, @SortOrder, ISNULL(@IsActive,1),
+         @TaxRate, @TaxableAmount, @VATAmount, @LineTotal, @AccountId, @CostCenterId, @RevenueRecognitionId, @SortOrder, ISNULL(@IsActive,1),
          GETDATE(), @UserId, GETDATE(), @UserId);
 
         SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id;
@@ -449,6 +460,8 @@ BEGIN
             VATAmount           = @VATAmount,
             LineTotal           = @LineTotal,
             AccountId           = @AccountId,
+            CostCenterId        = @CostCenterId,
+            RevenueRecognitionId = @RevenueRecognitionId,
             SortOrder           = @SortOrder,
             IsActive            = ISNULL(@IsActive, IsActive),
             UpdatedDate         = GETDATE(),
@@ -481,10 +494,14 @@ BEGIN
         p.Title AS ProductTitle,
         p.ServiceCode,
         a.Title AS AccountTitle,
+        cc.Title AS CostCenterTitle,
+        rr.Title AS RevenueRecognitionTitle,
         CAST(1 AS INT) AS TotalRecords
     FROM InvoiceProduct ip
     LEFT JOIN Product p ON p.Id = ip.ProductId
     LEFT JOIN AccountType a ON a.Id = ip.AccountId
+    LEFT JOIN CostCenter cc ON cc.Id = ip.CostCenterId
+    LEFT JOIN RevenueRecognitionType rr ON rr.Id = ip.RevenueRecognitionId
     WHERE (@InvoiceId IS NULL OR ip.InvoiceId = @InvoiceId)
       AND ip.IsActive = 1
     ORDER BY ip.SortOrder, ip.Id;
@@ -566,5 +583,154 @@ BEGIN
 
         SELECT @Id AS Id;
     END
+END
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Insert / Update Project
+-- ----------------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[InsertUpdateProject]
+    @Id       INT = NULL,
+    @Title    NVARCHAR(500) = NULL,
+    @IsActive BIT = 1,
+    @UserId   INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @Id IS NULL OR @Id = 0
+    BEGIN
+        INSERT INTO Project
+        (Title, IsActive, CreatedDate, CreatedBy, UpdatedDate, UpdatedBy, UserId)
+        VALUES
+        (@Title, ISNULL(@IsActive, 1), GETDATE(), @UserId, GETDATE(), @UserId, @UserId);
+
+        SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id;
+    END
+    ELSE
+    BEGIN
+        UPDATE Project SET
+            Title       = @Title,
+            IsActive    = ISNULL(@IsActive, IsActive),
+            UpdatedDate = GETDATE(),
+            UpdatedBy   = @UserId
+        WHERE Id = @Id;
+
+        SELECT @Id AS Id;
+    END
+END
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Get Project
+-- ----------------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[GetProject]
+    @Id         INT = NULL,
+    @SearchText NVARCHAR(200) = NULL,
+    @IsActive   BIT = NULL,
+    @PageNumber INT = 1,
+    @PageSize   INT = 20
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @Id IS NOT NULL
+    BEGIN
+        SELECT *, CAST(1 AS INT) AS TotalRecords FROM Project WHERE Id = @Id;
+        RETURN;
+    END
+
+    SELECT *, COUNT(*) OVER() AS TotalRecords
+    FROM Project
+    WHERE (@IsActive IS NULL OR IsActive = @IsActive)
+      AND (@SearchText IS NULL OR Title LIKE '%' + @SearchText + '%')
+    ORDER BY Id DESC
+    OFFSET (ISNULL(@PageNumber, 1) - 1) * ISNULL(@PageSize, 20) ROWS
+    FETCH NEXT ISNULL(@PageSize, 20) ROWS ONLY;
+END
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Delete Project (soft)
+-- ----------------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[DeleteProject]
+    @Id     INT,
+    @UserId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE Project SET
+        IsActive = 0,
+        UpdatedDate = GETDATE(),
+        UpdatedBy = @UserId
+    WHERE Id = @Id;
+
+    SELECT @Id AS Id;
+END
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Get Project Documents
+-- ----------------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[GetProjectDocument]
+    @Id        INT = NULL,
+    @ProjectId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        Id,
+        ProjectId,
+        DocumentTitle,
+        Url,
+        CreatedDate AS CreatedOn,
+        CreatedBy,
+        CAST(1 AS INT) AS TotalRecords
+    FROM ProjectDocument
+    WHERE (@Id IS NULL OR Id = @Id)
+      AND (@ProjectId IS NULL OR ProjectId = @ProjectId)
+      AND IsActive = 1
+    ORDER BY CreatedDate DESC;
+END
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Insert Project Document
+-- ----------------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[InsertProjectDocument]
+    @ProjectId     INT,
+    @DocumentTitle NVARCHAR(255) = NULL,
+    @Url           NVARCHAR(500) = NULL,
+    @UserId        INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO ProjectDocument
+    (ProjectId, DocumentTitle, Url, IsActive, CreatedDate, CreatedBy, UpdatedDate, UpdatedBy, UserId)
+    VALUES
+    (@ProjectId, @DocumentTitle, @Url, 1, GETDATE(), @UserId, GETDATE(), @UserId, @UserId);
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id;
+END
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Delete Project Document (soft)
+-- ----------------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[DeleteProjectDocument]
+    @Id     INT,
+    @UserId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE ProjectDocument SET
+        IsActive = 0,
+        UpdatedDate = GETDATE(),
+        UpdatedBy = @UserId
+    WHERE Id = @Id;
+
+    SELECT @Id AS Id;
 END
 GO

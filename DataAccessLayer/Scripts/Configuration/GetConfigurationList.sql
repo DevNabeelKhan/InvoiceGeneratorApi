@@ -12,7 +12,7 @@ BEGIN
     SET NOCOUNT ON;
 
     IF @TableName NOT IN (N'AccountType', N'BankFeesType', N'CashFlowType', N'ContactType', N'CostCenter',
-        N'Industry', N'InvoicingRelationShip', N'PaymentTerm', N'RevenueTaxRateType', N'Role',
+        N'Industry', N'InvoicingRelationShip', N'PaymentTerm', N'RevenueTaxRateType', N'RevenueRecognitionType', N'Role',
         N'UnitOfMeasure', N'ProductStatus')
     BEGIN
         RAISERROR('Invalid table name.', 16, 1);

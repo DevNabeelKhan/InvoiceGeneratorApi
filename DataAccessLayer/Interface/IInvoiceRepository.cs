@@ -16,5 +16,11 @@ namespace DataAccessLayer.Interface
         Task<dynamic> GetCurrency(int? Id);
         Task<dynamic> InsertUpdateCurrency(CurrencyModel model);
         Task<dynamic> GetNextInvoiceNumber(int? Year, string? Prefix);
+        Task<dynamic> GetProject(int? Id, string? SearchText, bool? IsActive, int? PageNumber, int? PageSize);
+        Task<dynamic> InsertUpdateProject(ProjectModel model);
+        Task<dynamic> DeleteProject(int? Id, int? UserId);
+        Task<dynamic> GetProjectDocument(int? Id, int? ProjectId);
+        Task<dynamic> InsertProjectDocument(ProjectDocumentModel model);
+        Task<dynamic> DeleteProjectDocument(int? Id, int? UserId);
     }
 }

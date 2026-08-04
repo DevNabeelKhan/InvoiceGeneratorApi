@@ -4,7 +4,7 @@ namespace BusinessObjectsLayer.Entities
 {
     public class CompanyModel : BaseEntity
     {
-        public string? Name { get; set; }
+        public string? Title { get; set; }
         public string? ArabicName { get; set; }
         public string? Address { get; set; }
         public string? ArabicAddress { get; set; }
@@ -12,6 +12,7 @@ namespace BusinessObjectsLayer.Entities
         public string? Phone { get; set; }
         public string? Website { get; set; }
         public string? VATNumber { get; set; }
+        public string? LogoUrl { get; set; }
         public string? LogoPath { get; set; }
         public string? StampPath { get; set; }
         public string? BankName { get; set; }

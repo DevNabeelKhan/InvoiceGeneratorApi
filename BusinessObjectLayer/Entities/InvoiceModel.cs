@@ -9,7 +9,8 @@ namespace BusinessObjectsLayer.Entities
         public string? UUID { get; set; }
         public string? Reference { get; set; }
         public string? PurchaseOrderNumber { get; set; }
-        public string? ProjectName { get; set; }
+        public int? ProjectId { get; set; }
+        public bool? PricesIncludeTax { get; set; } = false;
         public int? CompanyId { get; set; }
         public int? CustomerId { get; set; }
         public int? CurrencyId { get; set; }
@@ -64,6 +65,8 @@ namespace BusinessObjectsLayer.Entities
 
         public string? CurrencyCode { get; set; }
         public string? CurrencySymbol { get; set; }
+
+        public string? ProjectName { get; set; }
 
         public List<InvoiceProductModel> Products { get; set; } = new List<InvoiceProductModel>();
         public List<InvoiceAttachmentModel> Attachments { get; set; } = new List<InvoiceAttachmentModel>();

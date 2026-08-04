@@ -17,6 +17,7 @@ namespace DataAccessLayer.Shared
             "InvoicingRelationShip",
             "PaymentTerm",
             "RevenueTaxRateType",
+            "RevenueRecognitionType",
             "Role",
             "UnitOfMeasure",
             "ProductStatus"

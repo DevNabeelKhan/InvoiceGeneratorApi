@@ -13,5 +13,11 @@ namespace BusinessLogicLayer.Interfaces
         Task<dynamic> SaveCompany(CompanyModel model);
         Task<dynamic> GetCurrency(int? Id);
         Task<dynamic> SaveCurrency(CurrencyModel model);
+        Task<dynamic> GetProject(int? Id, string? SearchText, bool? IsActive, int? PageNumber, int? PageSize);
+        Task<dynamic> SaveProject(ProjectModel model);
+        Task<dynamic> DeleteProject(int? Id, int? UserId);
+        Task<dynamic> GetProjectDocument(int? Id, int? ProjectId);
+        Task<dynamic> SaveProjectDocument(ProjectDocumentModel model);
+        Task<dynamic> DeleteProjectDocument(int? Id, int? UserId);
     }
 }

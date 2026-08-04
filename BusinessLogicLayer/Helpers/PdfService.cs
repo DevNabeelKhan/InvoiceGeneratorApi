@@ -60,8 +60,10 @@ namespace BusinessLogicLayer.Helpers
                 catch { qrBase64 = null; }
             }
 
-            var logoHtml = !string.IsNullOrEmpty(company?.LogoPath)
-                ? $"<img src=\"{company.LogoPath}\" class=\"company-logo\" alt=\"logo\" />"
+            var logoSrc = !string.IsNullOrEmpty(company?.LogoPath) ? company!.LogoPath : company?.LogoUrl;
+
+            var logoHtml = !string.IsNullOrEmpty(logoSrc)
+                ? $"<img src=\"{logoSrc}\" class=\"company-logo\" alt=\"logo\" />"
                 : "<div class=\"company-logo-placeholder\"></div>";
 
             var stampHtml = !string.IsNullOrEmpty(company?.StampPath)
@@ -70,7 +72,7 @@ namespace BusinessLogicLayer.Helpers
 
             var customerName = invoice.CustomerName ?? string.Empty;
             var customerArabic = invoice.CustomerArabicName ?? string.Empty;
-            var companyName = invoice.CompanyName ?? company?.Name ?? string.Empty;
+            var companyName = invoice.CompanyName ?? company?.Title ?? string.Empty;
             var companyArabic = invoice.CompanyArabicName ?? company?.ArabicName ?? string.Empty;
             var companyVat = invoice.CompanyVATNumber ?? company?.VATNumber ?? string.Empty;
 

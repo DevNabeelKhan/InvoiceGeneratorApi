@@ -74,7 +74,8 @@ namespace DataAccessLayer.Repositories
                     UUID = model.UUID,
                     Reference = model.Reference,
                     PurchaseOrderNumber = model.PurchaseOrderNumber,
-                    ProjectName = model.ProjectName,
+                    ProjectId = model.ProjectId,
+                    PricesIncludeTax = model.PricesIncludeTax,
                     CompanyId = model.CompanyId,
                     CustomerId = model.CustomerId,
                     CurrencyId = model.CurrencyId,
@@ -179,6 +180,8 @@ namespace DataAccessLayer.Repositories
                     VATAmount = model.VATAmount,
                     LineTotal = model.LineTotal,
                     AccountId = model.AccountId,
+                    CostCenterId = model.CostCenterId,
+                    RevenueRecognitionId = model.RevenueRecognitionId,
                     SortOrder = model.SortOrder,
                     IsActive = model.IsActive,
                     UserId = Helper.UserId(_httpContextAccessor)
@@ -236,7 +239,7 @@ namespace DataAccessLayer.Repositories
                 var parameters = new
                 {
                     Id = model.Id,
-                    Name = model.Name,
+                    Title = model.Title,
                     ArabicName = model.ArabicName,
                     Address = model.Address,
                     ArabicAddress = model.ArabicAddress,
@@ -244,8 +247,7 @@ namespace DataAccessLayer.Repositories
                     Phone = model.Phone,
                     Website = model.Website,
                     VATNumber = model.VATNumber,
-                    LogoPath = model.LogoPath,
-                    StampPath = model.StampPath,
+                    LogoUrl = model.LogoUrl, 
                     BankName = model.BankName,
                     BankAccountNumber = model.BankAccountNumber,
                     IBAN = model.IBAN,
@@ -292,7 +294,7 @@ namespace DataAccessLayer.Repositories
                 {
                     Id = model.Id,
                     Code = model.Code,
-                    Name = model.Name,
+                    Title = model.Title,
                     Symbol = model.Symbol,
                     ExchangeRate = model.ExchangeRate,
                     IsActive = model.IsActive,
@@ -308,6 +310,139 @@ namespace DataAccessLayer.Repositories
                 Console.WriteLine(ex.Message);
             }
             return null;
+        }
+
+        public async Task<dynamic> GetProject(int? Id, string? SearchText, bool? IsActive, int? PageNumber, int? PageSize)
+        {
+            try
+            {
+                using var con = _context.CreateConnection();
+                var parameters = new
+                {
+                    Id = Id,
+                    SearchText = SearchText,
+                    IsActive = IsActive,
+                    PageNumber = PageNumber,
+                    PageSize = PageSize
+                };
+                return (await con.QueryAsync<dynamic>("GetProject", parameters, commandType: CommandType.StoredProcedure)).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return null;
+        }
+
+        public async Task<dynamic> InsertUpdateProject(ProjectModel model)
+        {
+            try
+            {
+                using var con = _context.CreateConnection();
+                var parameters = new
+                {
+                    Id = model.Id,
+                    Title = model.Title,
+                    IsActive = model.IsActive,
+                    UserId = Helper.UserId(_httpContextAccessor)
+                };
+
+                var resp = (await con.QueryAsync<dynamic>("InsertUpdateProject", parameters, commandType: CommandType.StoredProcedure)).FirstOrDefault();
+                model.Id = resp?.Id;
+                return model;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return null;
+        }
+
+        public async Task<dynamic> DeleteProject(int? Id, int? UserId)
+        {
+            var result = new Result();
+            try
+            {
+                using var con = _context.CreateConnection();
+                var parameters = new
+                {
+                    Id = Id,
+                    UserId = UserId ?? Helper.UserId(_httpContextAccessor)
+                };
+                await con.ExecuteAsync("DeleteProject", parameters, commandType: CommandType.StoredProcedure);
+                result.IsSuccess = true;
+                result.Message = "Project deleted successfully.";
+                result.Status = "Success";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                result.IsSuccess = false;
+            }
+            return result;
+        }
+
+        public async Task<dynamic> GetProjectDocument(int? Id, int? ProjectId)
+        {
+            try
+            {
+                using var con = _context.CreateConnection();
+                var parameters = new { Id = Id, ProjectId = ProjectId };
+                return (await con.QueryAsync<dynamic>("GetProjectDocument", parameters, commandType: CommandType.StoredProcedure)).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return null;
+        }
+
+        public async Task<dynamic> InsertProjectDocument(ProjectDocumentModel model)
+        {
+            try
+            {
+                using var con = _context.CreateConnection();
+                var parameters = new
+                {
+                    ProjectId = model.ProjectId,
+                    DocumentTitle = model.DocumentTitle,
+                    Url = model.Url,
+                    UserId = Helper.UserId(_httpContextAccessor)
+                };
+
+                var resp = (await con.QueryAsync<dynamic>("InsertProjectDocument", parameters, commandType: CommandType.StoredProcedure)).FirstOrDefault();
+                model.Id = resp?.Id;
+                return model;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return null;
+        }
+
+        public async Task<dynamic> DeleteProjectDocument(int? Id, int? UserId)
+        {
+            var result = new Result();
+            try
+            {
+                using var con = _context.CreateConnection();
+                var parameters = new
+                {
+                    Id = Id,
+                    UserId = UserId ?? Helper.UserId(_httpContextAccessor)
+                };
+                await con.ExecuteAsync("DeleteProjectDocument", parameters, commandType: CommandType.StoredProcedure);
+                result.IsSuccess = true;
+                result.Message = "Document deleted successfully.";
+                result.Status = "Success";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                result.IsSuccess = false;
+            }
+            return result;
         }
 
         public async Task<dynamic> GetNextInvoiceNumber(int? Year, string? Prefix)

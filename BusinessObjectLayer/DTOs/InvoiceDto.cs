@@ -27,8 +27,9 @@ namespace BusinessObjectsLayer.DTOs
         [StringLength(255, ErrorMessage = "Purchase order number is too long.")]
         public string? PurchaseOrderNumber { get; set; }
 
-        [StringLength(500, ErrorMessage = "Project name is too long.")]
-        public string? ProjectName { get; set; }
+        public int? ProjectId { get; set; }
+
+        public bool? PricesIncludeTax { get; set; } = false;
 
         public string? Notes { get; set; }
 
@@ -74,6 +75,9 @@ namespace BusinessObjectsLayer.DTOs
 
         [Required(ErrorMessage = "Account is required.")]
         public int? AccountId { get; set; }
+
+        public int? CostCenterId { get; set; }
+        public int? RevenueRecognitionId { get; set; }
 
         public int? SortOrder { get; set; } = 0;
     }

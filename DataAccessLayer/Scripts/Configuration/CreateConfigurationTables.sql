@@ -14,6 +14,7 @@ INSERT INTO @tables (Name) VALUES
     ('InvoicingRelationShip'),
     ('PaymentTerm'),
     ('RevenueTaxRateType'),
+    ('RevenueRecognitionType'),
     ('Role'),
     ('UnitOfMeasure'),
     ('ProductStatus');
