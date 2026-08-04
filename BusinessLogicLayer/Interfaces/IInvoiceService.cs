@@ -19,5 +19,8 @@ namespace BusinessLogicLayer.Interfaces
         Task<dynamic> GetProjectDocument(int? Id, int? ProjectId);
         Task<dynamic> SaveProjectDocument(ProjectDocumentModel model);
         Task<dynamic> DeleteProjectDocument(int? Id, int? UserId);
+        Task<dynamic> GetWarehouse(int? Id, string? SearchText, bool? IsActive, int? PageNumber, int? PageSize);
+        Task<dynamic> SaveWarehouse(WarehouseModel model);
+        Task<dynamic> DeleteWarehouse(int? Id, int? UserId);
     }
 }

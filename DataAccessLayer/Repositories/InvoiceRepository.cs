@@ -21,45 +21,41 @@ namespace DataAccessLayer.Repositories
 
         public async Task<dynamic> GetInvoice(int? Id, string? SearchText, int? CustomerId, string? Status, bool? IsActive, int? PageNumber = 1, int? PageSize = 20)
         {
-            try
+            // Note: intentionally no try/catch here. The controller already wraps this
+            // call in its own try/catch and returns a proper failure response - swallowing
+            // exceptions here previously caused real errors to be masked as a "successful"
+            // response with data: null, making failures indistinguishable from "not found".
+            using var con = _context.CreateConnection();
+            var parameters = new
             {
-                using var con = _context.CreateConnection();
-                var parameters = new
-                {
-                    Id = Id,
-                    SearchText = SearchText,
-                    CustomerId = CustomerId,
-                    Status = Status,
-                    IsActive = IsActive,
-                    PageNumber = PageNumber,
-                    PageSize = PageSize
-                };
+                Id = Id,
+                SearchText = SearchText,
+                CustomerId = CustomerId,
+                Status = Status,
+                IsActive = IsActive,
+                PageNumber = PageNumber,
+                PageSize = PageSize
+            };
 
-                var invoices = (await con.QueryAsync<dynamic>("GetInvoice", param: parameters, commandType: CommandType.StoredProcedure)).ToList();
+            var invoices = (await con.QueryAsync<dynamic>("GetInvoice", param: parameters, commandType: CommandType.StoredProcedure)).ToList();
 
-                if (Id.HasValue && invoices.Any())
-                {
-                    var invoice = invoices.First();
-                    var products = (await con.QueryAsync<dynamic>("GetInvoiceProduct",
-                        new { InvoiceId = invoice.Id },
-                        commandType: CommandType.StoredProcedure)).ToList();
-                    invoice.Products = products;
-
-                    var attachments = (await con.QueryAsync<dynamic>("GetInvoiceAttachments",
-                        new { InvoiceId = invoice.Id },
-                        commandType: CommandType.StoredProcedure)).ToList();
-                    invoice.Attachments = attachments;
-
-                    return invoice;
-                }
-
-                return invoices;
-            }
-            catch (Exception ex)
+            if (Id.HasValue && invoices.Any())
             {
-                Console.WriteLine(ex.Message);
+                var invoice = invoices.First();
+                var products = (await con.QueryAsync<dynamic>("GetInvoiceProduct",
+                    new { InvoiceId = invoice.Id },
+                    commandType: CommandType.StoredProcedure)).ToList();
+                invoice.Products = products;
+
+                var attachments = (await con.QueryAsync<dynamic>("GetInvoiceAttachments",
+                    new { InvoiceId = invoice.Id },
+                    commandType: CommandType.StoredProcedure)).ToList();
+                invoice.Attachments = attachments;
+
+                return invoice;
             }
-            return null;
+
+            return invoices;
         }
 
         public async Task<dynamic> InsertUpdateInvoice(InvoiceModel model)
@@ -75,6 +71,7 @@ namespace DataAccessLayer.Repositories
                     Reference = model.Reference,
                     PurchaseOrderNumber = model.PurchaseOrderNumber,
                     ProjectId = model.ProjectId,
+                    WarehouseId = model.WarehouseId,
                     PricesIncludeTax = model.PricesIncludeTax,
                     CompanyId = model.CompanyId,
                     CustomerId = model.CustomerId,
@@ -459,6 +456,83 @@ namespace DataAccessLayer.Repositories
                 Console.WriteLine(ex.Message);
             }
             return null;
+        }
+
+        public async Task<dynamic> GetWarehouse(int? Id, string? SearchText, bool? IsActive, int? PageNumber, int? PageSize)
+        {
+            try
+            {
+                using var con = _context.CreateConnection();
+                var parameters = new
+                {
+                    Id = Id,
+                    SearchText = SearchText,
+                    IsActive = IsActive,
+                    PageNumber = PageNumber,
+                    PageSize = PageSize
+                };
+                return (await con.QueryAsync<dynamic>("GetWarehouse", parameters, commandType: CommandType.StoredProcedure)).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return null;
+        }
+
+        public async Task<dynamic> InsertUpdateWarehouse(WarehouseModel model)
+        {
+            try
+            {
+                using var con = _context.CreateConnection();
+                var parameters = new
+                {
+                    Id = model.Id,
+                    Code = model.Code,
+                    Name = model.Name,
+                    Phone = model.Phone,
+                    StreetAddress = model.StreetAddress,
+                    BuildingNumber = model.BuildingNumber,
+                    District = model.District,
+                    City = model.City,
+                    PostalCode = model.PostalCode,
+                    IsActive = model.IsActive,
+                    UserId = Helper.UserId(_httpContextAccessor)
+                };
+
+                var resp = (await con.QueryAsync<dynamic>("InsertUpdateWarehouse", parameters, commandType: CommandType.StoredProcedure)).FirstOrDefault();
+                model.Id = resp?.Id;
+                return model;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return null;
+        }
+
+        public async Task<dynamic> DeleteWarehouse(int? Id, int? UserId)
+        {
+            var result = new Result();
+            try
+            {
+                using var con = _context.CreateConnection();
+                var parameters = new
+                {
+                    Id = Id,
+                    UserId = UserId ?? Helper.UserId(_httpContextAccessor)
+                };
+                await con.ExecuteAsync("DeleteWarehouse", parameters, commandType: CommandType.StoredProcedure);
+                result.IsSuccess = true;
+                result.Message = "Warehouse deleted successfully.";
+                result.Status = "Success";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                result.IsSuccess = false;
+            }
+            return result;
         }
     }
 }

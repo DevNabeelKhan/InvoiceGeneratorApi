@@ -431,5 +431,52 @@ namespace ConvergeAPI.Controllers
                 return Ok(ResponseHelper.GetFailureResponse(ex.Message));
             }
         }
+
+        [HttpGet("GetWarehouse")]
+        public async Task<IActionResult> GetWarehouse(int? Id, string? SearchText, bool? IsActive, int? PageNumber = 1, int? PageSize = 20)
+        {
+            try
+            {
+                var result = await _invoiceService.GetWarehouse(Id, SearchText, IsActive, PageNumber, PageSize);
+                return Ok(ResponseHelper.GetSuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse(ex.Message));
+            }
+        }
+
+        [HttpPost("InsertUpdateWarehouse")]
+        public async Task<IActionResult> InsertUpdateWarehouse(WarehouseModel model)
+        {
+            try
+            {
+                var result = await _invoiceService.SaveWarehouse(model);
+                return Ok(ResponseHelper.GetSuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse(ex.Message));
+            }
+        }
+
+        [HttpGet("DeleteWarehouse")]
+        public async Task<IActionResult> DeleteWarehouse(int? Id)
+        {
+            try
+            {
+                int? userId = null;
+                var userIdClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var parsedUserId))
+                    userId = parsedUserId;
+
+                var result = await _invoiceService.DeleteWarehouse(Id, userId);
+                return Ok(ResponseHelper.GetSuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                return Ok(ResponseHelper.GetFailureResponse(ex.Message));
+            }
+        }
     }
 }

@@ -162,8 +162,9 @@ GO
 -- Get next invoice number for a given year
 -- ----------------------------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE [dbo].[GetNextInvoiceNumber]
-    @Year     INT = NULL,
-    @Prefix   NVARCHAR(10) = 'INV-'
+    @Year           INT = NULL,
+    @Prefix         NVARCHAR(10) = 'INV-',
+    @InvoiceNumber  NVARCHAR(50) = NULL OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -181,8 +182,11 @@ BEGIN
     SET @NextNumber = LastNumber + 1, LastNumber = LastNumber + 1
     WHERE [Year] = @Year;
 
-    SELECT @Prefix + RIGHT('0000' + CAST(@NextNumber AS NVARCHAR(10)), 4) + '/' + CAST(@Year AS NVARCHAR(4)) AS InvoiceNumber,
-           @NextNumber AS Number;
+    SET @InvoiceNumber = @Prefix + RIGHT('0000' + CAST(@NextNumber AS NVARCHAR(10)), 4) + '/' + CAST(@Year AS NVARCHAR(4));
+
+    -- Result set kept for any callers that still consume it directly (e.g. ad-hoc testing);
+    -- the OUTPUT parameter above is what InsertUpdateInvoice actually relies on.
+    SELECT @InvoiceNumber AS InvoiceNumber, @NextNumber AS Number;
 END
 GO
 
@@ -196,6 +200,7 @@ CREATE OR ALTER PROCEDURE [dbo].[InsertUpdateInvoice]
     @Reference               NVARCHAR(255) = NULL,
     @PurchaseOrderNumber     NVARCHAR(255) = NULL,
     @ProjectId               INT = NULL,
+    @WarehouseId             INT = NULL,
     @PricesIncludeTax        BIT = 0,
     @CompanyId               INT = NULL,
     @CustomerId              INT = NULL,
@@ -237,21 +242,21 @@ BEGIN
         IF @InvoiceNumber IS NULL
         BEGIN
             DECLARE @NewNumber NVARCHAR(50);
-            EXEC @NewNumber = dbo.GetNextInvoiceNumber @Year = NULL, @Prefix = 'INV-';
+            EXEC dbo.GetNextInvoiceNumber @Year = NULL, @Prefix = 'INV-', @InvoiceNumber = @NewNumber OUTPUT;
             SET @InvoiceNumber = @NewNumber;
         END
 
         IF @UUID IS NULL SET @UUID = CONVERT(NVARCHAR(100), NEWID());
 
         INSERT INTO Invoice
-        (InvoiceNumber, [UUID], Reference, PurchaseOrderNumber, ProjectId, PricesIncludeTax, CompanyId, CustomerId,
+        (InvoiceNumber, [UUID], Reference, PurchaseOrderNumber, ProjectId, WarehouseId, PricesIncludeTax, CompanyId, CustomerId,
          CurrencyId, ExchangeRate, InvoiceDate, DueDate, Notes, [Status], PaymentStatus,
          Draft, Approved, Cancelled, Sent, Subtotal, DiscountPercentage, DiscountAmount,
          TaxAmount, GrandTotal, RetentionPercentage, RetentionAmount, RoundOffAmount,
          GeneratedQRCode, QRCodeImagePath, PreviousInvoiceHash, XMLPath, PDFPath, CreatedIP,
          IsActive, CreatedDate, CreatedBy, UpdatedDate, UpdatedBy, UserId)
         VALUES
-        (@InvoiceNumber, @UUID, @Reference, @PurchaseOrderNumber, @ProjectId, ISNULL(@PricesIncludeTax,0), @CompanyId, @CustomerId,
+        (@InvoiceNumber, @UUID, @Reference, @PurchaseOrderNumber, @ProjectId, @WarehouseId, ISNULL(@PricesIncludeTax,0), @CompanyId, @CustomerId,
          @CurrencyId, @ExchangeRate, @InvoiceDate, @DueDate, @Notes, @Status, @PaymentStatus,
          ISNULL(@Draft, 1), ISNULL(@Approved, 0), ISNULL(@Cancelled, 0), ISNULL(@Sent, 0),
          @Subtotal, @DiscountPercentage, @DiscountAmount, @TaxAmount, @GrandTotal,
@@ -264,10 +269,11 @@ BEGIN
     ELSE
     BEGIN
         UPDATE Invoice SET
-            InvoiceNumber         = @InvoiceNumber,
+            InvoiceNumber         = ISNULL(@InvoiceNumber, InvoiceNumber),
             Reference             = @Reference,
             PurchaseOrderNumber   = @PurchaseOrderNumber,
             ProjectId             = @ProjectId,
+            WarehouseId           = @WarehouseId,
             PricesIncludeTax      = ISNULL(@PricesIncludeTax, PricesIncludeTax),
             CompanyId             = @CompanyId,
             CustomerId            = @CustomerId,
@@ -301,7 +307,7 @@ BEGIN
             UpdatedBy             = @UserId
         WHERE Id = @Id;
 
-        SELECT @Id AS Id, @InvoiceNumber AS InvoiceNumber, @UUID AS [UUID];
+        SELECT Id, InvoiceNumber, [UUID] FROM Invoice WHERE Id = @Id;
     END
 END
 GO
@@ -349,12 +355,14 @@ BEGIN
             cur.Code AS CurrencyCode,
             cur.Symbol AS CurrencySymbol,
             pj.Title AS ProjectName,
+            wh.[Name] AS WarehouseName,
             CAST(1 AS INT) AS TotalRecords
         FROM Invoice i
         LEFT JOIN Customer c  ON c.Id  = i.CustomerId
         LEFT JOIN Company cmp ON cmp.Id = i.CompanyId
         LEFT JOIN Currency cur ON cur.Id = i.CurrencyId
         LEFT JOIN Project pj ON pj.Id = i.ProjectId
+        LEFT JOIN Warehouse wh ON wh.Id = i.WarehouseId
         WHERE i.Id = @Id AND i.IsActive = ISNULL(@IsActive, i.IsActive);
 
         RETURN;
@@ -366,12 +374,14 @@ BEGIN
         cmp.Title AS CompanyName,
         cur.Code AS CurrencyCode,
         pj.Title AS ProjectName,
+        wh.[Name] AS WarehouseName,
         COUNT(*) OVER() AS TotalRecords
     FROM Invoice i
     LEFT JOIN Customer c  ON c.Id = i.CustomerId
     LEFT JOIN Company cmp ON cmp.Id = i.CompanyId
     LEFT JOIN Currency cur ON cur.Id = i.CurrencyId
     LEFT JOIN Project pj ON pj.Id = i.ProjectId
+    LEFT JOIN Warehouse wh ON wh.Id = i.WarehouseId
     WHERE i.IsActive = ISNULL(@IsActive, i.IsActive)
       AND (@CustomerId IS NULL OR i.CustomerId = @CustomerId)
       AND (@Status IS NULL OR i.[Status] = @Status)
@@ -728,6 +738,105 @@ BEGIN
     UPDATE ProjectDocument SET
         IsActive = 0,
         UpdatedDate = GETDATE(),
+        UpdatedBy = @UserId
+    WHERE Id = @Id;
+
+    SELECT @Id AS Id;
+END
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Insert / Update Warehouse
+-- ----------------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[InsertUpdateWarehouse]
+    @Id             INT = NULL,
+    @Code           NVARCHAR(250) = NULL,
+    @Name           NVARCHAR(250) = NULL,
+    @Phone          NVARCHAR(250) = NULL,
+    @StreetAddress  NVARCHAR(250) = NULL,
+    @BuildingNumber NVARCHAR(250) = NULL,
+    @District       NVARCHAR(250) = NULL,
+    @City           NVARCHAR(250) = NULL,
+    @PostalCode     NVARCHAR(250) = NULL,
+    @IsActive       BIT = 1,
+    @UserId         INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @Id IS NULL OR @Id = 0
+    BEGIN
+        INSERT INTO Warehouse
+        (Code, [Name], Phone, StreetAddress, BuildingNumber, District, City, PostalCode,
+         IsActive, CreatedDate, CreatedBy, UpdatedDate, UpdatedBy, UserId)
+        VALUES
+        (@Code, @Name, @Phone, @StreetAddress, @BuildingNumber, @District, @City, @PostalCode,
+         ISNULL(@IsActive, 1), GETUTCDATE(), @UserId, GETUTCDATE(), @UserId, @UserId);
+
+        SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id;
+    END
+    ELSE
+    BEGIN
+        UPDATE Warehouse SET
+            Code           = @Code,
+            [Name]         = @Name,
+            Phone          = @Phone,
+            StreetAddress  = @StreetAddress,
+            BuildingNumber = @BuildingNumber,
+            District       = @District,
+            City           = @City,
+            PostalCode     = @PostalCode,
+            IsActive       = ISNULL(@IsActive, IsActive),
+            UpdatedDate    = GETUTCDATE(),
+            UpdatedBy      = @UserId
+        WHERE Id = @Id;
+
+        SELECT @Id AS Id;
+    END
+END
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Get Warehouse
+-- ----------------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[GetWarehouse]
+    @Id         INT = NULL,
+    @SearchText NVARCHAR(200) = NULL,
+    @IsActive   BIT = NULL,
+    @PageNumber INT = 1,
+    @PageSize   INT = 20
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @Id IS NOT NULL
+    BEGIN
+        SELECT *, CAST(1 AS INT) AS TotalRecords FROM Warehouse WHERE Id = @Id;
+        RETURN;
+    END
+
+    SELECT *, COUNT(*) OVER() AS TotalRecords
+    FROM Warehouse
+    WHERE (@IsActive IS NULL OR IsActive = @IsActive)
+      AND (@SearchText IS NULL OR [Name] LIKE '%' + @SearchText + '%' OR Code LIKE '%' + @SearchText + '%')
+    ORDER BY Id DESC
+    OFFSET (ISNULL(@PageNumber, 1) - 1) * ISNULL(@PageSize, 20) ROWS
+    FETCH NEXT ISNULL(@PageSize, 20) ROWS ONLY;
+END
+GO
+
+-- ----------------------------------------------------------------------------------------------------
+-- Delete Warehouse (soft)
+-- ----------------------------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE [dbo].[DeleteWarehouse]
+    @Id     INT,
+    @UserId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE Warehouse SET
+        IsActive = 0,
+        UpdatedDate = GETUTCDATE(),
         UpdatedBy = @UserId
     WHERE Id = @Id;
 

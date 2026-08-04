@@ -200,6 +200,8 @@ IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND 
     ALTER TABLE Invoice DROP COLUMN ProjectName;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'ProjectId')
     ALTER TABLE Invoice ADD ProjectId INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'WarehouseId')
+    ALTER TABLE Invoice ADD WarehouseId INT NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'PricesIncludeTax')
     ALTER TABLE Invoice ADD PricesIncludeTax BIT NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'CompanyId')
@@ -212,6 +214,24 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') 
     ALTER TABLE Invoice ADD ExchangeRate DECIMAL(18,6) NOT NULL DEFAULT 1;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'InvoiceDate')
     ALTER TABLE Invoice ADD InvoiceDate DATE NOT NULL DEFAULT GETDATE();
+
+-- Legacy column fix: some older deployments of this table have a leftover
+-- column literally named [Date] (NOT NULL, no default) that predates the
+-- rename to InvoiceDate. InsertUpdateInvoice never populates it, causing:
+-- "Cannot insert the value NULL into column 'Date' ... INSERT fails."
+-- Backfill InvoiceDate from it (if InvoiceDate is still at its default) and
+-- give it a default so future inserts stop failing.
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'Date')
+BEGIN
+    UPDATE Invoice SET InvoiceDate = [Date] WHERE InvoiceDate IS NULL OR InvoiceDate = CAST(GETDATE() AS DATE);
+
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.default_constraints dc
+        JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
+        WHERE dc.parent_object_id = OBJECT_ID('Invoice') AND c.name = 'Date'
+    )
+        ALTER TABLE Invoice ADD CONSTRAINT DF_Invoice_Date DEFAULT GETDATE() FOR [Date];
+END
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'DueDate')
     ALTER TABLE Invoice ADD DueDate DATE NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('Invoice') AND name = 'Notes')
@@ -337,6 +357,27 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoicePro
     ALTER TABLE InvoiceProduct ADD UpdatedDate DATETIME NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoiceProduct') AND name = 'UpdatedBy')
     ALTER TABLE InvoiceProduct ADD UpdatedBy INT NULL;
+GO
+
+-- Legacy columns fix: some deployments of InvoiceProduct have leftover columns
+-- (TaxRateId, Total) that predate the current schema and are NOT NULL with no
+-- default. InsertUpdateInvoiceProduct never populates them, so every insert
+-- fails silently (exception swallowed, invoice header saves but no lines).
+-- Make them nullable so inserts succeed without needing app changes.
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoiceProduct') AND name = 'TaxRateId' AND is_nullable = 0)
+    ALTER TABLE InvoiceProduct ALTER COLUMN TaxRateId INT NULL;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('InvoiceProduct') AND name = 'Total' AND is_nullable = 0)
+BEGIN
+    DECLARE @precision INT, @scale INT, @sql NVARCHAR(MAX);
+    SELECT @precision = precision, @scale = scale
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID('InvoiceProduct') AND name = 'Total';
+
+    SET @sql = N'ALTER TABLE InvoiceProduct ALTER COLUMN [Total] DECIMAL(' + CAST(@precision AS NVARCHAR(10)) + ',' + CAST(@scale AS NVARCHAR(10)) + ') NULL;';
+    EXEC sp_executesql @sql;
+END
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_InvoiceProduct_Invoice')

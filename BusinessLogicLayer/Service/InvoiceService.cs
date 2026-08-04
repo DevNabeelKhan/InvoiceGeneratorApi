@@ -104,6 +104,21 @@ namespace BusinessLogicLayer.Service
             return await _invoiceRepository.DeleteProjectDocument(Id, UserId);
         }
 
+        public async Task<dynamic> GetWarehouse(int? Id, string? SearchText, bool? IsActive, int? PageNumber, int? PageSize)
+        {
+            return await _invoiceRepository.GetWarehouse(Id, SearchText, IsActive, PageNumber, PageSize);
+        }
+
+        public async Task<dynamic> SaveWarehouse(WarehouseModel model)
+        {
+            return await _invoiceRepository.InsertUpdateWarehouse(model);
+        }
+
+        public async Task<dynamic> DeleteWarehouse(int? Id, int? UserId)
+        {
+            return await _invoiceRepository.DeleteWarehouse(Id, UserId);
+        }
+
         private InvoiceModel MapToInvoiceModel(InvoiceDto dto)
         {
             return new InvoiceModel
@@ -117,6 +132,7 @@ namespace BusinessLogicLayer.Service
                 Reference = dto.Reference,
                 PurchaseOrderNumber = dto.PurchaseOrderNumber,
                 ProjectId = dto.ProjectId,
+                WarehouseId = dto.WarehouseId,
                 PricesIncludeTax = dto.PricesIncludeTax,
                 Notes = dto.Notes,
                 ExchangeRate = dto.ExchangeRate,

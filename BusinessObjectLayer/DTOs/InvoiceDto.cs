@@ -29,6 +29,8 @@ namespace BusinessObjectsLayer.DTOs
 
         public int? ProjectId { get; set; }
 
+        public int? WarehouseId { get; set; }
+
         public bool? PricesIncludeTax { get; set; } = false;
 
         public string? Notes { get; set; }

@@ -208,14 +208,7 @@ namespace BusinessLogicLayer.Helpers
     </div>
 
     <div class='footer'>
-        <div class='bank-details'>
-            <strong>Bank Details / تفاصيل البنك</strong><br/>
-            Beneficiary: {company?.BeneficiaryName}<br/>
-            Bank: {company?.BankName}<br/>
-            Account: {company?.BankAccountNumber}<br/>
-            IBAN: {company?.IBAN}<br/>
-            SWIFT: {company?.SwiftCode}
-        </div>
+        <div class='bank-details'></div>
         <div class='qr-section'>
             {(string.IsNullOrEmpty(qrBase64) ? "" : $"<img src='{qrBase64}' alt='QR'/>")}
             <div class='stamp-section'>{stampHtml}</div>
