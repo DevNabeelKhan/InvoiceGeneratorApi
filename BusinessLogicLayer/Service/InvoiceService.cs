@@ -182,6 +182,8 @@ namespace BusinessLogicLayer.Service
                 RoundOffAmount = dto.RoundOffAmount,
                 GeneratedQRCode = dto.GeneratedQRCode,
                 QRCodeImagePath = dto.QRCodeImagePath,
+                Draft=dto.Draft,
+                Status=dto.Status,
                 Products = dto.Products?.Select(p => new InvoiceProductModel
                 {
                     Id = p.Id,

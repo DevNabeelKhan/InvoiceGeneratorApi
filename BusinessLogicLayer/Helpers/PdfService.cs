@@ -157,7 +157,7 @@ namespace BusinessLogicLayer.Helpers
     <style>
         @page {{ size: A4; margin: 10mm; }}
         * {{ box-sizing: border-box; }}
-        body {{ font-family: 'Segoe UI', Tahoma, Arial, sans-serif; margin: 0; padding: 0; background: #fff; }}
+        body {{ font-family: 'Inter','Segoe UI', 'Noto Sans', Tahoma, Arial, sans-serif; margin: 0; padding: 0; background: #fff; }}
         .ar {{ font-family: 'Segoe UI', Tahoma, sans-serif; direction: rtl; unicode-bidi: isolate; color: inherit; font-weight: inherit; }}
 
         .preview-card {{ background: #fff; padding: 4px 6px 4px; font-size: 13px; color: #1d2939; line-height: 1.5; }}

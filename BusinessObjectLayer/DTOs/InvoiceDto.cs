@@ -44,6 +44,9 @@ namespace BusinessObjectsLayer.DTOs
 
         public string? GeneratedQRCode { get; set; }
         public string? QRCodeImagePath { get; set; }
+        public bool? Draft { get; set; } = false;
+        public string? Status { get; set; }
+
 
         [Required(ErrorMessage = "At least one invoice line is required.")]
         [MinLength(1, ErrorMessage = "At least one invoice line is required.")]
