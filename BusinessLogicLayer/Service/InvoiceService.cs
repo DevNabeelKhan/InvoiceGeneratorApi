@@ -1,3 +1,4 @@
+using BusinessLogicLayer.Helpers;
 using BusinessLogicLayer.Interfaces;
 using BusinessObjectsLayer.DTOs;
 using BusinessObjectsLayer.Entities;
@@ -41,7 +42,45 @@ namespace BusinessLogicLayer.Service
                 }
             }
 
+            // Generate and persist the ZATCA QR TLV now that the invoice Id and totals are known,
+            // so GeneratedQRCode is never left null after a save (it previously only got set if the
+            // user explicitly hit "Generate QR" in the UI, and even then it wasn't saved back).
+            await GenerateAndSaveQrCode(invoice);
+
             return await _invoiceRepository.GetInvoice(invoice.Id, null, null, null, null, 1, 20);
+        }
+
+        private async Task GenerateAndSaveQrCode(InvoiceModel invoice)
+        {
+            try
+            {
+                var sellerName = invoice.CompanyName;
+                var vatNumber = invoice.CompanyVATNumber;
+
+                if (string.IsNullOrEmpty(sellerName) || string.IsNullOrEmpty(vatNumber))
+                {
+                    var companyList = await _invoiceRepository.GetCompany(invoice.CompanyId);
+                    var company = companyList != null && ((IEnumerable<dynamic>)companyList).Any()
+                        ? ((IEnumerable<dynamic>)companyList).First()
+                        : null;
+                    sellerName ??= company?.Title;
+                    vatNumber ??= company?.VATNumber;
+                }
+
+                invoice.GeneratedQRCode = ZatcaQrHelper.GenerateBase64(
+                    sellerName ?? string.Empty,
+                    vatNumber ?? string.Empty,
+                    invoice.InvoiceDate ?? DateTime.UtcNow,
+                    invoice.GrandTotal ?? 0,
+                    invoice.TaxAmount ?? 0);
+                invoice.QRCodeImagePath = $"data:image/png;base64,{ZatcaQrHelper.GenerateQrImageBase64(invoice.GeneratedQRCode)}";
+
+                await _invoiceRepository.InsertUpdateInvoice(invoice);
+            }
+            catch
+            {
+                // QR generation must never fail the invoice save.
+            }
         }
 
         public async Task<dynamic> DeleteInvoice(int? Id, int? UserId)
@@ -141,6 +180,8 @@ namespace BusinessLogicLayer.Service
                 RetentionPercentage = dto.RetentionPercentage,
                 RetentionAmount = dto.RetentionAmount,
                 RoundOffAmount = dto.RoundOffAmount,
+                GeneratedQRCode = dto.GeneratedQRCode,
+                QRCodeImagePath = dto.QRCodeImagePath,
                 Products = dto.Products?.Select(p => new InvoiceProductModel
                 {
                     Id = p.Id,

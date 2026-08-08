@@ -48,17 +48,27 @@ namespace BusinessLogicLayer.Helpers
         public string GenerateInvoiceHtml(InvoiceModel invoice, CompanyModel? company)
         {
             var culture = new CultureInfo("en-SA");
-            var qrBase64 = invoice.GeneratedQRCode;
 
-            if (!string.IsNullOrEmpty(qrBase64))
+            // Use the TLV already persisted on the invoice if available; otherwise generate it on the
+            // fly from the invoice/company data so the QR code always renders in the PDF, even if
+            // "Generate QR" was never explicitly saved back to the invoice record.
+            var tlvBase64 = invoice.GeneratedQRCode;
+            if (string.IsNullOrEmpty(tlvBase64))
             {
-                try
-                {
-                    var qrImage = ZatcaQrHelper.GenerateQrImageBase64(qrBase64, 4);
-                    qrBase64 = $"data:image/png;base64,{qrImage}";
-                }
-                catch { qrBase64 = null; }
+                var sellerName = invoice.CompanyName ?? company?.Title ?? string.Empty;
+                var vatNumber = invoice.CompanyVATNumber ?? company?.VATNumber ?? string.Empty;
+                var invoiceTotal = invoice.GrandTotal ?? 0;
+                var vatTotal = invoice.TaxAmount ?? 0;
+                tlvBase64 = ZatcaQrHelper.GenerateBase64(sellerName, vatNumber, invoice.InvoiceDate ?? DateTime.UtcNow, invoiceTotal, vatTotal);
             }
+
+            string? qrBase64 = null;
+            try
+            {
+                var qrImage = ZatcaQrHelper.GenerateQrImageBase64(tlvBase64, 4);
+                qrBase64 = $"data:image/png;base64,{qrImage}";
+            }
+            catch { qrBase64 = null; }
 
             var logoSrc = !string.IsNullOrEmpty(invoice.LogoPath) ? invoice.LogoPath
                 : !string.IsNullOrEmpty(company?.LogoPath) ? company!.LogoPath : company?.LogoUrl;

@@ -42,6 +42,9 @@ namespace BusinessObjectsLayer.DTOs
         public decimal? RetentionAmount { get; set; } = 0;
         public decimal? RoundOffAmount { get; set; } = 0;
 
+        public string? GeneratedQRCode { get; set; }
+        public string? QRCodeImagePath { get; set; }
+
         [Required(ErrorMessage = "At least one invoice line is required.")]
         [MinLength(1, ErrorMessage = "At least one invoice line is required.")]
         public List<InvoiceProductDto> Products { get; set; } = new List<InvoiceProductDto>();
